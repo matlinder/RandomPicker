@@ -16,8 +16,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".RandomListActivity" />
-        <activity android:name=".CustomListActivity"></activity>
+        <activity android:name=".RandomListActivity"
+            android:windowSoftInputMode="adjustPan"
+            />
+        <activity android:name=".CustomListActivity"
+            android:windowSoftInputMode="adjustPan"
+        />
     </application>
 
 </manifest>

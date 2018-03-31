@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <dimen name="bottom_button_margin">20dp</dimen>
+    <dimen name="button_layout_padding">8dp</dimen>
+    <dimen name="button_height">60dp</dimen>
+    <dimen name="button_bottom_space">20dp</dimen>
+
+</resources>
