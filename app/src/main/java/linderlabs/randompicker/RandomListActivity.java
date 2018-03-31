@@ -1,5 +1,6 @@
 package linderlabs.randompicker;
 
+import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Color;
 import android.support.v7.app.AlertDialog;
@@ -16,6 +17,12 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -25,6 +32,9 @@ public class RandomListActivity extends AppCompatActivity {
     private EditText item;
     private ImageButton trashButton;
     private LinearLayout listLayout;
+    private static final String FOOD_FILE_NAMES = "food_list_names";
+    private String saveFileName = "";
+    private String[] fileNames;
 
 
     @Override
@@ -45,7 +55,9 @@ public class RandomListActivity extends AppCompatActivity {
             {
                 getSupportActionBar().setTitle("Random Activity");
             }
+
         }
+
         item = findViewById(R.id.addItem);
         item.setOnKeyListener(new View.OnKeyListener()
         {
@@ -70,9 +82,63 @@ public class RandomListActivity extends AppCompatActivity {
         listLayout = findViewById(R.id.listItems);
         trashButton = findViewById(R.id.trashButton);
 
-
+        loadLastList(listType);
 
     }
+
+    private void loadLastList(String listType) {
+
+            try {
+                FileInputStream names = null;
+                //open a filestream to read the file
+                if(listType.equals("food")) {
+                    names = openFileInput(FOOD_FILE_NAMES);
+                }else if(listType.equals("activities")){
+                    names = openFileInput(FOOD_FILE_NAMES);
+                }
+                InputStreamReader isr = new InputStreamReader(names);
+                BufferedReader bufferedReader = new BufferedReader(isr);
+                StringBuilder sb = new StringBuilder();
+                String line;
+                //read the file line by line
+                while ((line = bufferedReader.readLine()) != null) {
+                    sb.append(line).append("\n");
+                }
+                //put the contents in string
+                String content = sb.toString();
+                fileNames = content.split("\\n");
+                int length = fileNames.length;
+                if(length != 0 && fileNames[length-1] != null)
+                {
+                    //open a filestream to read the file
+                    names = openFileInput(fileNames[length-1]);
+                    isr = new InputStreamReader(names);
+                    bufferedReader = new BufferedReader(isr);
+                    sb = new StringBuilder();
+                    String line2;
+                    //read the file line by line
+                    while ((line2 = bufferedReader.readLine()) != null) {
+                        sb.append(line2).append("\n");
+                    }
+                    //put the contents in string
+                    String contentNew = sb.toString();
+                    String[] listItems = contentNew.split("\\n");
+                    for(String item : listItems)
+                    {
+                        listOfItems.add(item);
+                        addItemToLayout(item);
+                    }
+                }
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+
+        }
+
+
     public void addItemToList(View view) {
 
         String itemToAdd = item.getText().toString();
@@ -167,6 +233,202 @@ public class RandomListActivity extends AppCompatActivity {
 
         alert.show();
     }
+
+    public void saveList()
+    {
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Save List as:");
+
+        // Set up the input
+        final EditText input = new EditText(this);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.MATCH_PARENT);
+        input.setLayoutParams(lp);
+        input.setPadding(20,30,0,30);
+        builder.setView(input);
+
+        // Set up the buttons
+        builder.setPositiveButton("Save", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                saveFileName = input.getText().toString();
+                try {
+                    FileOutputStream outputStream = openFileOutput(saveFileName, Context.MODE_PRIVATE);
+
+                    for(String temp : listOfItems)
+                    {
+                        if(temp != null)
+                        {
+                            outputStream.write(temp.getBytes());
+                            outputStream.write("\n".getBytes());
+                        }
+                    }
+                    outputStream.close();
+
+                    FileOutputStream outputStream2 = openFileOutput(FOOD_FILE_NAMES, Context.MODE_APPEND);
+                    outputStream2.write(saveFileName.getBytes());
+                    outputStream2.write("\n".getBytes());
+                    outputStream2.close();
+
+
+
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                    Toast.makeText(getApplicationContext(), "File not found!", Toast.LENGTH_LONG).show();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    Toast.makeText(getApplicationContext(), "Trouble writing to the file", Toast.LENGTH_LONG).show();
+                }
+
+
+            }
+        });
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+
+        builder.show();
+
+    }
+
+    public void loadList()
+    {
+        try {
+            //open a filestream to read the file
+            FileInputStream names = openFileInput(FOOD_FILE_NAMES);
+            InputStreamReader isr = new InputStreamReader(names);
+            BufferedReader bufferedReader = new BufferedReader(isr);
+            StringBuilder sb = new StringBuilder();
+            String line;
+            //read the file line by line
+            while ((line = bufferedReader.readLine()) != null) {
+                sb.append(line).append("\n");
+            }
+            //put the contents in string
+            String content = sb.toString();
+            fileNames = content.split("\\n");
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Load List");
+        if(fileNames == null || fileNames.length == 0) {
+            builder.setTitle("No lists have been created yet");
+            builder.setPositiveButton("ok", new DialogInterface.OnClickListener() {
+
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
+                }
+            });
+        }
+        builder.setItems(fileNames, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                listLayout.removeAllViews();
+                listOfItems.clear();
+                try {
+                    //open a filestream to read the file
+                    FileInputStream names = openFileInput(fileNames[which]);
+                    InputStreamReader isr = new InputStreamReader(names);
+                    BufferedReader bufferedReader = new BufferedReader(isr);
+                    StringBuilder sb = new StringBuilder();
+                    String line;
+                    //read the file line by line
+                    while ((line = bufferedReader.readLine()) != null) {
+                        sb.append(line).append("\n");
+                    }
+                    //put the contents in string
+                    String content = sb.toString();
+                    String[] listItems = content.split("\\n");
+                    for(String item : listItems)
+                    {
+                        listOfItems.add(item);
+                        addItemToLayout(item);
+                    }
+
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        });
+        builder.show();
+    }
+
+    public void deleteSavedList()
+    {
+        try {
+            //open a filestream to read the file
+            FileInputStream names = openFileInput(FOOD_FILE_NAMES);
+            InputStreamReader isr = new InputStreamReader(names);
+            BufferedReader bufferedReader = new BufferedReader(isr);
+            StringBuilder sb = new StringBuilder();
+            String line;
+            //read the file line by line
+            while ((line = bufferedReader.readLine()) != null) {
+                sb.append(line).append("\n");
+            }
+            //put the contents in string
+            String content = sb.toString();
+            fileNames = content.split("\\n");
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Select File to Delete");
+        builder.setItems(fileNames, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                deleteFile(fileNames[which]);
+                fileNames[which] = null;
+
+                FileOutputStream outputStream2 = null;
+                try {
+                    outputStream2 = openFileOutput(FOOD_FILE_NAMES, Context.MODE_PRIVATE);
+
+                    for(String temp :fileNames) {
+                        if(temp != null)
+                        {
+                            outputStream2.write(temp.getBytes());
+                            outputStream2.write("\n".getBytes());
+                        }
+
+                    }
+                    outputStream2.close();
+
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+
+            }
+        });
+        builder.show();
+    }
+
+
     public void deleteSelected(View view) {
         final int childCount = listLayout.getChildCount();
         for(int i = 0; i < childCount; i++)
@@ -206,6 +468,15 @@ public class RandomListActivity extends AppCompatActivity {
                 listOfItems.clear();
                 return true;
 
+            case R.id.delete:
+                deleteSavedList();
+                return true;
+            case R.id.load:
+                loadList();
+                return true;
+            case R.id.save:
+                saveList();
+                return true;
             case R.id.about:
                 Toast.makeText(getApplicationContext(),"More to come", Toast.LENGTH_LONG).show();
                 return true;
