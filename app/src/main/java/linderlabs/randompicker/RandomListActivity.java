@@ -1,8 +1,12 @@
 package linderlabs.randompicker;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -27,14 +31,19 @@ import java.util.ArrayList;
 import java.util.Random;
 
 public class RandomListActivity extends AppCompatActivity {
+    public static final int REQUEST_CODE_WRITE = 1;
+    public static final int REQUEST_CODE_READ = 2;
     private String listType;
     private ArrayList<String> listOfItems = new ArrayList<String>();
     private EditText item;
     private ImageButton trashButton;
     private LinearLayout listLayout;
     private static final String FOOD_FILE_NAMES = "food_list_names";
+    private static final String ACTIVITIES_FILE_NAMES = "activities_list_names";
+    private static final String CUSTOM_FILE_NAMES = "custom_list_names";
     private String saveFileName = "";
     private String[] fileNames;
+    private String currentActivityFileName = null;
 
 
     @Override
@@ -50,10 +59,16 @@ public class RandomListActivity extends AppCompatActivity {
             listType = extras.getString("type");
             if(listType.equals("food"))
             {
-                getSupportActionBar().setTitle("Random Restaurant");
+                getSupportActionBar().setTitle("Pick a Restaurant");
+                currentActivityFileName = FOOD_FILE_NAMES;
             }else if(listType.equals("activities"))
             {
-                getSupportActionBar().setTitle("Random Activity");
+                getSupportActionBar().setTitle("Pick an Activity");
+                currentActivityFileName = CUSTOM_FILE_NAMES;
+            }else if(listType.equals("custom"))
+            {
+                getSupportActionBar().setTitle("Anything List");
+                currentActivityFileName = ACTIVITIES_FILE_NAMES;
             }
 
         }
@@ -89,13 +104,7 @@ public class RandomListActivity extends AppCompatActivity {
     private void loadLastList(String listType) {
 
             try {
-                FileInputStream names = null;
-                //open a filestream to read the file
-                if(listType.equals("food")) {
-                    names = openFileInput(FOOD_FILE_NAMES);
-                }else if(listType.equals("activities")){
-                    names = openFileInput(FOOD_FILE_NAMES);
-                }
+                FileInputStream names = openFileInput(currentActivityFileName);
                 InputStreamReader isr = new InputStreamReader(names);
                 BufferedReader bufferedReader = new BufferedReader(isr);
                 StringBuilder sb = new StringBuilder();
@@ -108,10 +117,10 @@ public class RandomListActivity extends AppCompatActivity {
                 String content = sb.toString();
                 fileNames = content.split("\\n");
                 int length = fileNames.length;
-                if(length != 0 && fileNames[length-1] != null)
+                if(length != 0 && fileNames[length- REQUEST_CODE_WRITE] != null)
                 {
                     //open a filestream to read the file
-                    names = openFileInput(fileNames[length-1]);
+                    names = openFileInput(fileNames[length- REQUEST_CODE_WRITE]);
                     isr = new InputStreamReader(names);
                     bufferedReader = new BufferedReader(isr);
                     sb = new StringBuilder();
@@ -236,144 +245,154 @@ public class RandomListActivity extends AppCompatActivity {
 
     public void saveList()
     {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+            // Writing to storage permission has not been granted.
+            requestWritePermission();
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Save List as:");
+        } else {
 
-        // Set up the input
-        final EditText input = new EditText(this);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.MATCH_PARENT);
-        input.setLayoutParams(lp);
-        input.setPadding(20,30,0,30);
-        builder.setView(input);
 
-        // Set up the buttons
-        builder.setPositiveButton("Save", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                saveFileName = input.getText().toString();
-                try {
-                    FileOutputStream outputStream = openFileOutput(saveFileName, Context.MODE_PRIVATE);
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("Save List as:");
 
-                    for(String temp : listOfItems)
-                    {
-                        if(temp != null)
-                        {
-                            outputStream.write(temp.getBytes());
-                            outputStream.write("\n".getBytes());
+            // Set up the input
+            final EditText input = new EditText(this);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.MATCH_PARENT);
+            input.setLayoutParams(lp);
+            input.setPadding(20, 30, 0, 30);
+            builder.setView(input);
+
+            // Set up the buttons
+            builder.setPositiveButton("Save", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    saveFileName = input.getText().toString();
+                    try {
+                        FileOutputStream outputStream = openFileOutput(saveFileName, Context.MODE_PRIVATE);
+
+                        for (String temp : listOfItems) {
+                            if (temp != null) {
+                                outputStream.write(temp.getBytes());
+                                outputStream.write("\n".getBytes());
+                            }
                         }
+                        outputStream.close();
+
+                        FileOutputStream outputStream2 = openFileOutput(currentActivityFileName, Context.MODE_APPEND);
+                        outputStream2.write(saveFileName.getBytes());
+                        outputStream2.write("\n".getBytes());
+                        outputStream2.close();
+
+
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                        Toast.makeText(getApplicationContext(), "File not found!", Toast.LENGTH_LONG).show();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        Toast.makeText(getApplicationContext(), "Trouble writing to the file", Toast.LENGTH_LONG).show();
                     }
-                    outputStream.close();
-
-                    FileOutputStream outputStream2 = openFileOutput(FOOD_FILE_NAMES, Context.MODE_APPEND);
-                    outputStream2.write(saveFileName.getBytes());
-                    outputStream2.write("\n".getBytes());
-                    outputStream2.close();
 
 
-
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
-                    Toast.makeText(getApplicationContext(), "File not found!", Toast.LENGTH_LONG).show();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    Toast.makeText(getApplicationContext(), "Trouble writing to the file", Toast.LENGTH_LONG).show();
                 }
+            });
+            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.cancel();
+                }
+            });
 
-
-            }
-        });
-        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.cancel();
-            }
-        });
-
-        builder.show();
-
+            builder.show();
+        }
     }
+
 
     public void loadList()
     {
-        try {
-            //open a filestream to read the file
-            FileInputStream names = openFileInput(FOOD_FILE_NAMES);
-            InputStreamReader isr = new InputStreamReader(names);
-            BufferedReader bufferedReader = new BufferedReader(isr);
-            StringBuilder sb = new StringBuilder();
-            String line;
-            //read the file line by line
-            while ((line = bufferedReader.readLine()) != null) {
-                sb.append(line).append("\n");
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+            // Reading storage permission has not been granted.
+            requestReadPermission();
+
+        } else {
+            try {
+                //open a filestream to read the file
+                FileInputStream names = openFileInput(currentActivityFileName);
+                InputStreamReader isr = new InputStreamReader(names);
+                BufferedReader bufferedReader = new BufferedReader(isr);
+                StringBuilder sb = new StringBuilder();
+                String line;
+                //read the file line by line
+                while ((line = bufferedReader.readLine()) != null) {
+                    sb.append(line).append("\n");
+                }
+                //put the contents in string
+                String content = sb.toString();
+                fileNames = content.split("\\n");
+
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-            //put the contents in string
-            String content = sb.toString();
-            fileNames = content.split("\\n");
-
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
 
 
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("Load List");
+            if (fileNames == null || fileNames.length == 0) {
+                builder.setTitle("No lists have been created yet");
+                builder.setPositiveButton("ok", new DialogInterface.OnClickListener() {
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Load List");
-        if(fileNames == null || fileNames.length == 0) {
-            builder.setTitle("No lists have been created yet");
-            builder.setPositiveButton("ok", new DialogInterface.OnClickListener() {
-
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                });
+            }
+            builder.setItems(fileNames, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    dialog.dismiss();
+                    listLayout.removeAllViews();
+                    listOfItems.clear();
+                    try {
+                        //open a filestream to read the file
+                        FileInputStream names = openFileInput(fileNames[which]);
+                        InputStreamReader isr = new InputStreamReader(names);
+                        BufferedReader bufferedReader = new BufferedReader(isr);
+                        StringBuilder sb = new StringBuilder();
+                        String line;
+                        //read the file line by line
+                        while ((line = bufferedReader.readLine()) != null) {
+                            sb.append(line).append("\n");
+                        }
+                        //put the contents in string
+                        String content = sb.toString();
+                        String[] listItems = content.split("\\n");
+                        for (String item : listItems) {
+                            listOfItems.add(item);
+                            addItemToLayout(item);
+                        }
+
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
                 }
             });
+            builder.show();
         }
-        builder.setItems(fileNames, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                listLayout.removeAllViews();
-                listOfItems.clear();
-                try {
-                    //open a filestream to read the file
-                    FileInputStream names = openFileInput(fileNames[which]);
-                    InputStreamReader isr = new InputStreamReader(names);
-                    BufferedReader bufferedReader = new BufferedReader(isr);
-                    StringBuilder sb = new StringBuilder();
-                    String line;
-                    //read the file line by line
-                    while ((line = bufferedReader.readLine()) != null) {
-                        sb.append(line).append("\n");
-                    }
-                    //put the contents in string
-                    String content = sb.toString();
-                    String[] listItems = content.split("\\n");
-                    for(String item : listItems)
-                    {
-                        listOfItems.add(item);
-                        addItemToLayout(item);
-                    }
-
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
-            }
-        });
-        builder.show();
     }
 
     public void deleteSavedList()
     {
         try {
             //open a filestream to read the file
-            FileInputStream names = openFileInput(FOOD_FILE_NAMES);
+            FileInputStream names = openFileInput(currentActivityFileName);
             InputStreamReader isr = new InputStreamReader(names);
             BufferedReader bufferedReader = new BufferedReader(isr);
             StringBuilder sb = new StringBuilder();
@@ -404,7 +423,7 @@ public class RandomListActivity extends AppCompatActivity {
 
                 FileOutputStream outputStream2 = null;
                 try {
-                    outputStream2 = openFileOutput(FOOD_FILE_NAMES, Context.MODE_PRIVATE);
+                    outputStream2 = openFileOutput(currentActivityFileName, Context.MODE_PRIVATE);
 
                     for(String temp :fileNames) {
                         if(temp != null)
@@ -450,7 +469,95 @@ public class RandomListActivity extends AppCompatActivity {
 
         trashButton.setVisibility(View.GONE);
     }
+    private void requestWritePermission() {
+        // BEGIN_INCLUDE(camera_permission_request)
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+            // Camera permission has not been granted yet. Request it directly.
+            showExplanation("Permission Needed to Save Files", "This permission is needed to save the lists to files located on your device, that is all.", Manifest.permission.WRITE_EXTERNAL_STORAGE, REQUEST_CODE_WRITE);
 
+        }else {
+
+            // Camera permission has not been granted yet. Request it directly.
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    REQUEST_CODE_WRITE);
+        }
+        // END_INCLUDE(camera_permission_request)
+    }
+    private void requestReadPermission() {
+        // BEGIN_INCLUDE(camera_permission_request)
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                Manifest.permission.READ_EXTERNAL_STORAGE)) {
+            // Camera permission has not been granted yet. Request it directly.
+            showExplanation("Permission Needed to Load files", "This permissions is needed to load the lists from files located on your device, that is all.", Manifest.permission.WRITE_EXTERNAL_STORAGE, REQUEST_CODE_READ);
+
+        }else {
+
+            // Camera permission has not been granted yet. Request it directly.
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                    REQUEST_CODE_READ);
+        }
+        // END_INCLUDE(camera_permission_request)
+    }
+    /**
+     * Callback received when a permissions request has been completed.
+     */
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                                           int[] grantResults) {
+
+        if (requestCode == REQUEST_CODE_WRITE) {
+            // BEGIN_INCLUDE(permission_result)
+            // Received permission result for camera permission.
+//            Log.i(TAG, "Received response for Camera permission request.");
+
+            // Check if the only required permission has been granted
+            if (grantResults.length == 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                Toast.makeText(getApplicationContext(), "Permission granted", Toast.LENGTH_LONG).show();
+                saveList();
+            }else
+            {
+                Toast.makeText(getApplicationContext(), "Write permission denied, cannot save", Toast.LENGTH_LONG).show();
+            }
+
+            // END_INCLUDE(permission_result)
+
+        } else if(requestCode == REQUEST_CODE_READ)
+        {
+            // Check if the only required permission has been granted
+            if (grantResults.length == 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                Toast.makeText(getApplicationContext(), "Permission granted", Toast.LENGTH_LONG).show();
+                loadList();
+            }else
+            {
+                Toast.makeText(getApplicationContext(), "Read permission denied, cannot load", Toast.LENGTH_LONG).show();
+            }
+        }
+        else {
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        }
+    }
+    private void showExplanation(String title,
+                                 String message,
+                                 final String permission,
+                                 final int permissionRequestCode) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(title)
+                .setMessage(message)
+                .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        requestPermission(permission, permissionRequestCode);
+                    }
+                });
+        builder.create().show();
+    }
+
+    private void requestPermission(String permissionName, int permissionRequestCode) {
+        ActivityCompat.requestPermissions(this,
+                new String[]{permissionName}, permissionRequestCode);
+    }
     /**
      * Clicking the back button on the title bar returns to the previous activity on the stack
      * @param item
@@ -477,9 +584,7 @@ public class RandomListActivity extends AppCompatActivity {
             case R.id.save:
                 saveList();
                 return true;
-            case R.id.about:
-                Toast.makeText(getApplicationContext(),"More to come", Toast.LENGTH_LONG).show();
-                return true;
+
 
         }
 
@@ -490,7 +595,7 @@ public class RandomListActivity extends AppCompatActivity {
      * Method for back button on title bar
      */
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_main, menu);
+        getMenuInflater().inflate(R.menu.list_menu, menu);
         return true;
     }
 

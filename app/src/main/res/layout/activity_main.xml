@@ -4,7 +4,6 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/white"
     tools:context="linderlabs.randompicker.MainActivity">
 
     <LinearLayout
@@ -37,7 +36,10 @@
             android:layout_marginTop="150dp"
             android:background="@drawable/mybutton"
             android:onClick="startAcitivyRestaurant"
-            android:text="Where to eat?" />
+            android:text="Where to eat?"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
+            android:textStyle="bold" />
 
         <Button
             android:id="@+id/activitiesBtn"
@@ -48,7 +50,10 @@
             android:layout_marginStart="@dimen/button_layout_padding"
             android:background="@drawable/mybutton"
             android:onClick="startAcitivyToDo"
-            android:text="What to do?" />
+            android:text="What to do?"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
+            android:textStyle="bold" />
 
         <Button
             android:id="@+id/customBtn"
@@ -58,6 +63,9 @@
             android:layout_marginStart="@dimen/button_layout_padding"
             android:background="@drawable/mybutton"
             android:onClick="startAcitivyCustomList"
-            android:text="Make another list" />
+            android:text="Search Nearby"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
+            android:textStyle="bold" />
     </LinearLayout>
 </RelativeLayout>
