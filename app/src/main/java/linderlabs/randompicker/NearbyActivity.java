@@ -19,7 +19,11 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -49,10 +53,28 @@ import org.json.JSONObject;
 
 import java.util.List;
 
-public class NearbyActivity extends AppCompatActivity {
-    private ProgressDialog prgDialog; //dialog
-    private TextView latitudeT, longitudeT;
+public class NearbyActivity extends AppCompatActivity implements View.OnClickListener {
     double longitudeD, latitudeD;
+    private ProgressDialog prgDialog; //dialog
+    private SeekBar seekBar;
+    private TextView radiusText;
+    private EditText keyword;
+    int radius = 1;
+    private Button typeButton, price1, price2, price3, price4, btn_unfocus;
+    private String type = null;
+    private int price = 0;
+    private String[] types = {"restaurant","meal_delivery","meal_takeaway","amusement_park", "aquarium","art_gallery", "bakery", "bar", "beauty_salon", "bicycle_store",
+            "book_store","bowling_alley","cafe","campground","casino","clothing_store","convenience_store","electronics_store",
+            "gym","library","liquor_store","lodging",
+            "movie_theater","museum","night_club","park","shopping_mall","spa","stadium","store","supermarket",
+            "zoo","No Type"};
+    private String[] prettyTypes = {"Restaurant","Food Delivery","Food Take out/To Go","Amusement Park", "Aquarium","Art Gallery", "Bakery", "Bar", "Salon", "Cycling Store",
+            "Book Store","Bowling","Cafe","Campground","Casino","Clothing Store","Convenience Store","Electronics Store",
+            "Gym","Library","Liquor Store","Lodging",
+            "Theater","Museum","Night Club","Park", "Mall","Spa","Stadium","Store","Supermarket",
+            "Zoo", "No Type"};
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,8 +90,38 @@ public class NearbyActivity extends AppCompatActivity {
         // Set Cancelable as False
         prgDialog.setCancelable(false);
 
-        latitudeT = findViewById(R.id.latitude);
-        longitudeT = findViewById(R.id.longitude);
+        seekBar = findViewById(R.id.seekBarRadius);
+        radiusText = findViewById(R.id.seekNum);
+        typeButton = findViewById(R.id.typeButton);
+        price1 = findViewById(R.id.price1);
+        price2 = findViewById(R.id.price2);
+        price3 = findViewById(R.id.price3);
+        price4 = findViewById(R.id.price4);
+        price1.setOnClickListener(this);
+        price2.setOnClickListener(this);
+        price3.setOnClickListener(this);
+        price4.setOnClickListener(this);
+        keyword = findViewById(R.id.editKeyword);
+
+
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
+            public void onProgressChanged(SeekBar seekBar, int progressValue, boolean fromUser) {
+                progressValue += 1;
+                radiusText.setText(String.valueOf(progressValue) + " KM");
+                radius = progressValue;
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+
+        });
+
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
             // Writing to storage permission has not been granted.
@@ -87,9 +139,9 @@ public class NearbyActivity extends AppCompatActivity {
                             // Got last known location. In some rare situations this can be null.
                             if (location != null) {
                                 longitudeD = location.getLongitude();
-                                longitudeT.setText(String.valueOf(longitudeD));
+//                                longitudeT.setText(String.valueOf(longitudeD));
                                 latitudeD = location.getLatitude();
-                                latitudeT.setText(String.valueOf(latitudeD));
+//                                latitudeT.setText(String.valueOf(latitudeD));
                                 Toast.makeText(getApplicationContext(), "we made it", Toast.LENGTH_LONG).show();
                             }
                             else
@@ -103,7 +155,7 @@ public class NearbyActivity extends AppCompatActivity {
 
     }
 
-     private void displayLocationSettingsRequest(Context context) {
+    private void displayLocationSettingsRequest(Context context) {
         GoogleApiClient googleApiClient = new GoogleApiClient.Builder(context)
                 .addApi(LocationServices.API).build();
         googleApiClient.connect();
@@ -148,7 +200,7 @@ public class NearbyActivity extends AppCompatActivity {
         if (ActivityCompat.shouldShowRequestPermissionRationale(this,
                 Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
             // Camera permission has not been granted yet. Request it directly.
-            showExplanation("Permission Needed to Save Files", "This permission is needed to save the lists to files located on your device, that is all.", Manifest.permission.ACCESS_FINE_LOCATION, 1);
+            showExplanation("Permission Needed to Use Location", "This permission is needed to use your location in order to access the nearby places from Google, no information is sent to anyone.", Manifest.permission.ACCESS_FINE_LOCATION, 1);
 
         }else {
 
@@ -206,7 +258,18 @@ public class NearbyActivity extends AppCompatActivity {
         ActivityCompat.requestPermissions(this,
                 new String[]{permissionName}, permissionRequestCode);
     }
+    public void getNearbyPlaces(View view) {
+        String _keyword = keyword.getText().toString();
+        if(_keyword != null && _keyword.length() > 0)
+        {
+            //params
+        }
+        if(type != null && !type.equals("No Type") )
+        {
+            //params
+        }
 
+    }
 //    public void displayNetworkData() {
 //        prgDialog.show();
 //        AsyncHttpClient client = new AsyncHttpClient();
@@ -258,6 +321,28 @@ public class NearbyActivity extends AppCompatActivity {
 //
 //
 //    }
+
+    public void displayTypesList(View view) {
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Select A Type of Place");
+
+        builder.setItems(prettyTypes, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                typeButton.setText(prettyTypes[which]);
+                type = types[which];
+
+
+            }
+        });
+        builder.show();
+    }
+    public void priceOnClick(View view) {
+
+    }
+
+
     /**
      * Clicking the back button on the title bar returns to the previous activity on the stack
      * @param item
@@ -267,6 +352,7 @@ public class NearbyActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case android.R.id.home:
+                prgDialog.dismiss();
                 finish();
                 return true;
         }
@@ -285,7 +371,7 @@ public class NearbyActivity extends AppCompatActivity {
      * What to do when the acitivty is destroyed
      */
     public void onDestroy() {
-
+        prgDialog.dismiss();
         super.onDestroy();
         finish();
     }
@@ -295,6 +381,7 @@ public class NearbyActivity extends AppCompatActivity {
      */
     public void onPause()
     {
+        prgDialog.dismiss();
         super.onPause();
 
     }
@@ -305,5 +392,57 @@ public class NearbyActivity extends AppCompatActivity {
     public void onResume()
     {
         super.onResume();
+    }
+
+
+    public void cancel(View view) {
+
+        prgDialog.dismiss();
+        finish();
+    }
+
+
+    @Override
+    public void onClick(View view) {
+        switch (view.getId()){
+            case R.id.price1 :
+
+                setFocus(btn_unfocus, price1);
+                price = 1;
+                break;
+
+            case R.id.price2 :
+                setFocus(btn_unfocus, price2);
+                price = 2;
+                break;
+
+            case R.id.price3 :
+                setFocus(btn_unfocus, price3);
+                price = 3;
+                break;
+
+            case R.id.price4 :
+                setFocus(btn_unfocus, price4);
+                price = 4;
+                break;
+        }
+    }
+
+    private void setFocus(Button btn_unfocus, Button btn_focus){
+
+        if(this.btn_unfocus == btn_focus && !btn_focus.getBackground().equals(R.drawable.mybutton))
+        {
+            btn_focus.setBackgroundResource(R.drawable.mybutton);
+            price = 0;
+            this.btn_unfocus = null;
+            return;
+        }
+        if(btn_unfocus != null) {
+            btn_unfocus.setBackgroundResource(R.drawable.mybutton);
+        }
+        btn_focus.setBackgroundResource(R.drawable.mybutton_pressed);
+        this.btn_unfocus = btn_focus;
+
+
     }
 }

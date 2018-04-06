@@ -12,6 +12,7 @@
         android:id="@+id/linearLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:background="@android:color/white"
         android:orientation="vertical"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
@@ -20,6 +21,7 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="@android:color/white"
             android:orientation="horizontal">
 
             <EditText
@@ -71,12 +73,14 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
+            android:background="@android:color/white"
             android:isScrollContainer="false">
 
             <LinearLayout
                 android:id="@+id/listItems"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:background="@android:color/white"
                 android:orientation="vertical"
                 android:paddingEnd="@dimen/button_layout_padding"
                 android:paddingStart="@dimen/button_layout_padding" />
@@ -85,10 +89,10 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
             android:layout_marginBottom="@dimen/bottom_button_margin"
             android:layout_marginEnd="@dimen/button_layout_padding"
             android:layout_marginStart="@dimen/button_layout_padding"
+            android:background="@android:color/white"
             android:gravity="bottom"
             android:orientation="vertical">
 
